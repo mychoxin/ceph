@@ -46,8 +46,10 @@ you may write data with one API and retrieve it with the other.
 	Swift API <swift>
 	Admin Ops API <adminops>
 	OpenStack Keystone Integration <keystone>
+	OpenStack Barbican Integration <barbican>
 	Multi-tenancy <multitenancy>
 	Compression <compression>
+	Server-Side Encryption <encryption>
 	troubleshooting
 	Manpage radosgw <../../man/8/radosgw>
 	Manpage radosgw-admin <../../man/8/radosgw-admin>
