@@ -43,6 +43,9 @@ enum EventType {
   EVENT_TYPE_METADATA_SET    = 16,
   EVENT_TYPE_METADATA_REMOVE = 17,
   EVENT_TYPE_AIO_WRITESAME   = 18,
+  EVENT_TYPE_SNAP_CLEAR_REFCNT     = 19,
+  EVENT_TYPE_SNAP_ADD_REFCNT       = 20,
+  EVENT_TYPE_SNAP_SUB_REFCNT       = 21,
 };
 
 struct AioDiscardEvent {
@@ -241,6 +244,51 @@ struct SnapUnprotectEvent : public SnapEventBase {
   using SnapEventBase::dump;
 };
 
+struct SnapClearRefCntEvent : public SnapEventBase {
+  static const EventType TYPE = EVENT_TYPE_SNAP_CLEAR_REFCNT;
+
+  SnapClearRefCntEvent() {
+  }
+  SnapClearRefCntEvent(uint64_t op_tid, const cls::rbd::SnapshotNamespace &snap_namespace,
+		     const std::string &snap_name)
+    : SnapEventBase(op_tid, snap_namespace, snap_name) {
+  }
+
+  using SnapEventBase::encode;
+  using SnapEventBase::decode;
+  using SnapEventBase::dump;
+};
+
+struct SnapAddRefCntEvent : public SnapEventBase {
+  static const EventType TYPE = EVENT_TYPE_SNAP_ADD_REFCNT;
+
+  SnapAddRefCntEvent() {
+  }
+  SnapAddRefCntEvent(uint64_t op_tid, const cls::rbd::SnapshotNamespace &snap_namespace,
+		     const std::string &snap_name)
+    : SnapEventBase(op_tid, snap_namespace, snap_name) {
+  }
+
+  using SnapEventBase::encode;
+  using SnapEventBase::decode;
+  using SnapEventBase::dump;
+};
+
+struct SnapSubRefCntEvent : public SnapEventBase {
+  static const EventType TYPE = EVENT_TYPE_SNAP_SUB_REFCNT;
+
+  SnapSubRefCntEvent() {
+  }
+  SnapSubRefCntEvent(uint64_t op_tid, const cls::rbd::SnapshotNamespace &snap_namespace,
+		     const std::string &snap_name)
+    : SnapEventBase(op_tid, snap_namespace, snap_name) {
+  }
+
+  using SnapEventBase::encode;
+  using SnapEventBase::decode;
+  using SnapEventBase::dump;
+};
+
 struct SnapLimitEvent : public OpEventBase {
   static const EventType TYPE = EVENT_TYPE_SNAP_LIMIT;
   uint64_t limit;
@@ -391,12 +439,15 @@ typedef boost::variant<AioDiscardEvent,
                        SnapRenameEvent,
                        SnapProtectEvent,
                        SnapUnprotectEvent,
+                       SnapClearRefCntEvent,
+                       SnapAddRefCntEvent,
+                       SnapSubRefCntEvent,
                        SnapRollbackEvent,
                        RenameEvent,
                        ResizeEvent,
                        FlattenEvent,
                        DemoteEvent,
-		       SnapLimitEvent,
+                       SnapLimitEvent,
                        UpdateFeaturesEvent,
                        MetadataSetEvent,
                        MetadataRemoveEvent,

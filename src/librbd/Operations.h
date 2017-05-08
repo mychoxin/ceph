@@ -87,6 +87,24 @@ public:
 			      const std::string &snap_name,
 			      Context *on_finish);
 
+  int snap_clear_refcnt(const cls::rbd::SnapshotNamespace& snap_namespace,
+		     const char *snap_name);
+  void execute_snap_clear_refcnt(const cls::rbd::SnapshotNamespace& snap_namespace,
+			      const std::string &snap_name,
+			      Context *on_finish);
+
+  int snap_add_refcnt(const cls::rbd::SnapshotNamespace& snap_namespace,
+		     const char *snap_name);
+  void execute_snap_add_refcnt(const cls::rbd::SnapshotNamespace& snap_namespace,
+			      const std::string &snap_name,
+			      Context *on_finish);
+
+  int snap_sub_refcnt(const cls::rbd::SnapshotNamespace& snap_namespace,
+		     const char *snap_name);
+  void execute_snap_sub_refcnt(const cls::rbd::SnapshotNamespace& snap_namespace,
+			      const std::string &snap_name,
+			      Context *on_finish);
+
   int snap_set_limit(uint64_t limit);
   void execute_snap_set_limit(uint64_t limit, Context *on_finish);
 

@@ -534,7 +534,7 @@ namespace librbd {
     void snapshot_list_start(librados::ObjectReadOperation *op,
                              const std::vector<snapid_t> &ids) {
       for (auto snap_id : ids) {
-        bufferlist bl1, bl2, bl3, bl4;
+        bufferlist bl1, bl2, bl3, bl4, bl5;
         ::encode(snap_id, bl1);
         op->exec("rbd", "get_snapshot_name", bl1);
         ::encode(snap_id, bl2);
@@ -543,6 +543,8 @@ namespace librbd {
         op->exec("rbd", "get_parent", bl3);
         ::encode(snap_id, bl4);
         op->exec("rbd", "get_protection_status", bl4);
+        ::encode(snap_id, bl5);
+        op->exec("rbd", "get_snapshot_refcnt", bl5);
       }
     }
 
@@ -551,12 +553,14 @@ namespace librbd {
                              std::vector<string> *names,
                              std::vector<uint64_t> *sizes,
                              std::vector<ParentInfo> *parents,
-                             std::vector<uint8_t> *protection_statuses)
+                             std::vector<uint8_t> *protection_statuses,
+                             std::vector<uint32_t> *refcnts)
     {
       names->resize(ids.size());
       sizes->resize(ids.size());
       parents->resize(ids.size());
       protection_statuses->resize(ids.size());
+      refcnts->resize(ids.size());
       try {
 	for (size_t i = 0; i < names->size(); ++i) {
 	  uint8_t order;
@@ -572,6 +576,8 @@ namespace librbd {
 	  ::decode((*parents)[i].overlap, *it);
 	  // get_protection_status
 	  ::decode((*protection_statuses)[i], *it);
+      // get_refcnt
+	  ::decode((*refcnts)[i], *it);
 	}
       } catch (const buffer::error &err) {
         return -EBADMSG;
@@ -584,7 +590,8 @@ namespace librbd {
 		      std::vector<string> *names,
 		      std::vector<uint64_t> *sizes,
 		      std::vector<ParentInfo> *parents,
-		      std::vector<uint8_t> *protection_statuses)
+		      std::vector<uint8_t> *protection_statuses,
+              std::vector<uint32_t> *refcnts)
     {
       librados::ObjectReadOperation op;
       snapshot_list_start(&op, ids);
@@ -597,7 +604,47 @@ namespace librbd {
 
       bufferlist::iterator it = out_bl.begin();
       return snapshot_list_finish(&it, ids, names, sizes, parents,
-                                  protection_statuses);
+                                  protection_statuses, refcnts);
+    }
+
+    int get_snapshot_refcnt(librados::IoCtx *ioctx, const std::string &oid,
+                          uint32_t *refcnt)
+    {
+      bufferlist in, out;
+      int r =  ioctx->exec(oid, "rbd", "get_snapshot_refcnt", in, out);
+      if (r < 0) {
+       return r;
+      }
+
+      try {
+       bufferlist::iterator iter = out.begin();
+       ::decode(*refcnt, iter);
+      } catch (const buffer::error &err) {
+       return -EBADMSG;
+      }
+
+      return 0;
+    }
+
+    void clear_snapshot_refcnt(librados::ObjectWriteOperation *op, snapid_t snap_id)
+    {
+      bufferlist in;
+      ::encode(snap_id, in);
+      op->exec("rbd", "clear_snapshot_refcnt", in);
+    }
+
+    void add_snapshot_refcnt(librados::ObjectWriteOperation *op, snapid_t snap_id)
+    {
+      bufferlist in;
+      ::encode(snap_id, in);
+      op->exec("rbd", "add_snapshot_refcnt", in);
+    }
+
+    void sub_snapshot_refcnt(librados::ObjectWriteOperation *op, snapid_t snap_id)
+    {
+      bufferlist in;
+      ::encode(snap_id, in);
+      op->exec("rbd", "sub_snapshot_refcnt", in);
     }
 
     void snapshot_timestamp_list_start(librados::ObjectReadOperation *op,

@@ -331,6 +331,9 @@ void NotifyMessage::decode(bufferlist::iterator& iter) {
   case NOTIFY_OP_SNAP_UNPROTECT:
     payload = SnapUnprotectPayload();
     break;
+  case NOTIFY_OP_SNAP_CLEAR_REFCNT:
+    payload = SnapClearRefCntPayload();
+    break;
   case NOTIFY_OP_REBUILD_OBJECT_MAP:
     payload = RebuildObjectMapPayload();
     break;

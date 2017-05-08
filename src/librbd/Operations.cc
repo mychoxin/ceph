@@ -30,6 +30,9 @@
 #include "librbd/operation/SnapshotRenameRequest.h"
 #include "librbd/operation/SnapshotRollbackRequest.h"
 #include "librbd/operation/SnapshotUnprotectRequest.h"
+#include "librbd/operation/SnapshotClearRefCntRequest.h"
+#include "librbd/operation/SnapshotAddRefCntRequest.h"
+#include "librbd/operation/SnapshotSubRefCntRequest.h"
 #include "librbd/operation/SnapshotLimitRequest.h"
 #include <set>
 #include <boost/bind.hpp>
@@ -928,6 +931,19 @@ void Operations<I>::execute_snap_remove(const cls::rbd::SnapshotNamespace& snap_
     on_finish->complete(-EBUSY);
     return;
   }
+
+  bool is_using;
+  r = m_image_ctx.is_snap_using(snap_id, &is_using);
+  if (r < 0) {
+    m_image_ctx.snap_lock.put_read();
+    on_finish->complete(r);
+    return;
+  } else if (is_using) {
+    lderr(m_image_ctx.cct) << "snapshot is in using" << dendl;
+    m_image_ctx.snap_lock.put_read();
+    on_finish->complete(-EBUSY);
+    return;
+  }
   m_image_ctx.snap_lock.put_read();
 
   operation::SnapshotRemoveRequest<I> *req =
@@ -1201,6 +1217,162 @@ void Operations<I>::execute_snap_unprotect(const cls::rbd::SnapshotNamespace& sn
       m_image_ctx, new C_NotifyUpdate<I>(m_image_ctx, on_finish), snap_namespace, snap_name);
   request->send();
 }
+
+template <typename I>
+int Operations<I>::snap_clear_refcnt(const cls::rbd::SnapshotNamespace& snap_namespace,
+				  const char *snap_name) {
+  CephContext *cct = m_image_ctx.cct;
+  ldout(cct, 5) << this << " " << __func__ << ": snap_name=" << snap_name
+                << dendl;
+
+  if (m_image_ctx.read_only) {
+    return -EROFS;
+  }
+
+  int r = m_image_ctx.state->refresh_if_required();
+  if (r < 0) {
+    return r;
+  }
+
+  if (m_image_ctx.test_features(RBD_FEATURE_JOURNALING)) {
+    r = invoke_async_request("snap_unprotect", true,
+                             boost::bind(&Operations<I>::execute_snap_clear_refcnt,
+                                         this, snap_namespace, snap_name, _1),
+                             boost::bind(&ImageWatcher<I>::notify_snap_clear_refcnt,
+                                         m_image_ctx.image_watcher, snap_namespace,
+                                         snap_name, _1));
+    if (r < 0 && r != -EINVAL) {
+      return r;
+    }
+  } else {
+    RWLock::RLocker owner_lock(m_image_ctx.owner_lock);
+    C_SaferCond cond_ctx;
+    execute_snap_clear_refcnt(snap_namespace, snap_name, &cond_ctx);
+
+    r = cond_ctx.wait();
+    if (r < 0) {
+      return r;
+    }
+  }
+  return 0;
+}
+
+template <typename I>
+void Operations<I>::execute_snap_clear_refcnt(const cls::rbd::SnapshotNamespace& snap_namespace,
+					   const std::string &snap_name,
+                       Context *on_finish) {
+  assert(m_image_ctx.owner_lock.is_locked());
+  if (m_image_ctx.test_features(RBD_FEATURE_JOURNALING)) {
+    assert(m_image_ctx.exclusive_lock == nullptr ||
+           m_image_ctx.exclusive_lock->is_lock_owner());
+  }
+
+  CephContext *cct = m_image_ctx.cct;
+  ldout(cct, 5) << this << " " << __func__ << ": snap_name=" << snap_name
+                << dendl;
+
+  operation::SnapshotClearRefCntRequest<I> *request =
+    new operation::SnapshotClearRefCntRequest<I>(
+      m_image_ctx, new C_NotifyUpdate<I>(m_image_ctx, on_finish), snap_namespace, snap_name);
+  request->send();
+}
+
+template <typename I>
+int Operations<I>::snap_add_refcnt(const cls::rbd::SnapshotNamespace& snap_namespace,
+				  const char *snap_name) {
+  CephContext *cct = m_image_ctx.cct;
+  ldout(cct, 5) << this << " " << __func__ << ": snap_name=" << snap_name
+                << dendl;
+
+  if (m_image_ctx.read_only) {
+    return -EROFS;
+  }
+
+  int r = m_image_ctx.state->refresh_if_required();
+  if (r < 0) {
+    return r;
+  }
+
+  RWLock::RLocker owner_lock(m_image_ctx.owner_lock);
+  C_SaferCond cond_ctx;
+  execute_snap_add_refcnt(snap_namespace, snap_name, &cond_ctx);
+
+  r = cond_ctx.wait();
+  if (r < 0) {
+    return r;
+  }
+
+  return 0;
+}
+
+template <typename I>
+void Operations<I>::execute_snap_add_refcnt(const cls::rbd::SnapshotNamespace& snap_namespace,
+					   const std::string &snap_name,
+                       Context *on_finish) {
+  assert(m_image_ctx.owner_lock.is_locked());
+  if (m_image_ctx.test_features(RBD_FEATURE_JOURNALING)) {
+    assert(m_image_ctx.exclusive_lock == nullptr ||
+           m_image_ctx.exclusive_lock->is_lock_owner());
+  }
+
+  CephContext *cct = m_image_ctx.cct;
+  ldout(cct, 5) << this << " " << __func__ << ": snap_name=" << snap_name
+                << dendl;
+
+  operation::SnapshotAddRefCntRequest<I> *request =
+    new operation::SnapshotAddRefCntRequest<I>(
+      m_image_ctx, new C_NotifyUpdate<I>(m_image_ctx, on_finish), snap_namespace, snap_name);
+  request->send();
+}
+
+template <typename I>
+int Operations<I>::snap_sub_refcnt(const cls::rbd::SnapshotNamespace& snap_namespace,
+				  const char *snap_name) {
+  CephContext *cct = m_image_ctx.cct;
+  ldout(cct, 5) << this << " " << __func__ << ": snap_name=" << snap_name
+                << dendl;
+
+  if (m_image_ctx.read_only) {
+    return -EROFS;
+  }
+
+  int r = m_image_ctx.state->refresh_if_required();
+  if (r < 0) {
+    return r;
+  }
+
+  RWLock::RLocker owner_lock(m_image_ctx.owner_lock);
+  C_SaferCond cond_ctx;
+  execute_snap_sub_refcnt(snap_namespace, snap_name, &cond_ctx);
+
+  r = cond_ctx.wait();
+  if (r < 0) {
+    return r;
+  }
+
+  return 0;
+}
+
+template <typename I>
+void Operations<I>::execute_snap_sub_refcnt(const cls::rbd::SnapshotNamespace& snap_namespace,
+					   const std::string &snap_name,
+                       Context *on_finish) {
+  assert(m_image_ctx.owner_lock.is_locked());
+  if (m_image_ctx.test_features(RBD_FEATURE_JOURNALING)) {
+    assert(m_image_ctx.exclusive_lock == nullptr ||
+           m_image_ctx.exclusive_lock->is_lock_owner());
+  }
+
+  CephContext *cct = m_image_ctx.cct;
+  ldout(cct, 5) << this << " " << __func__ << ": snap_name=" << snap_name
+                << dendl;
+
+  operation::SnapshotSubRefCntRequest<I> *request =
+    new operation::SnapshotSubRefCntRequest<I>(
+      m_image_ctx, new C_NotifyUpdate<I>(m_image_ctx, on_finish), snap_namespace, snap_name);
+  request->send();
+}
+
 
 template <typename I>
 int Operations<I>::snap_set_limit(uint64_t limit) {

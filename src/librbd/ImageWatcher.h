@@ -57,6 +57,9 @@ public:
   void notify_snap_unprotect(const cls::rbd::SnapshotNamespace &snap_namespace,
 			     const std::string &snap_name,
 			     Context *on_finish);
+  void notify_snap_clear_refcnt(const cls::rbd::SnapshotNamespace &snap_namespace,
+					    const std::string &snap_name,
+                        Context *on_finish);
   void notify_rebuild_object_map(uint64_t request_id,
                                  ProgressContext &prog_ctx, Context *on_finish);
   void notify_rename(const std::string &image_name, Context *on_finish);
@@ -241,6 +244,8 @@ private:
   bool handle_payload(const watch_notify::SnapProtectPayload& payload,
                       C_NotifyAck *ctx);
   bool handle_payload(const watch_notify::SnapUnprotectPayload& payload,
+                      C_NotifyAck *ctx);
+  bool handle_payload(const watch_notify::SnapClearRefCntPayload& payload,
                       C_NotifyAck *ctx);
   bool handle_payload(const watch_notify::RebuildObjectMapPayload& payload,
                       C_NotifyAck *ctx);

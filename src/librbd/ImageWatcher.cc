@@ -205,6 +205,17 @@ void ImageWatcher<I>::notify_snap_unprotect(const cls::rbd::SnapshotNamespace &s
 }
 
 template <typename I>
+void ImageWatcher<I>::notify_snap_clear_refcnt(const cls::rbd::SnapshotNamespace &snap_namespace,
+					    const std::string &snap_name,
+                        Context *on_finish) {
+  assert(m_image_ctx.owner_lock.is_locked());
+  assert(m_image_ctx.exclusive_lock &&
+         !m_image_ctx.exclusive_lock->is_lock_owner());
+
+  notify_lock_owner(SnapClearRefCntPayload(snap_namespace, snap_name), on_finish);
+}
+
+template <typename I>
 void ImageWatcher<I>::notify_rebuild_object_map(uint64_t request_id,
                                                 ProgressContext &prog_ctx,
                                                 Context *on_finish) {
@@ -792,6 +803,26 @@ bool ImageWatcher<I>::handle_payload(const SnapUnprotectPayload& payload,
       m_image_ctx.operations->execute_snap_unprotect(payload.snap_namespace,
 						     payload.snap_name,
                                                      new C_ResponseMessage(ack_ctx));
+      return false;
+    } else if (r < 0) {
+      ::encode(ResponseMessage(r), ack_ctx->out);
+    }
+  }
+  return true;
+}
+
+template <typename I>
+bool ImageWatcher<I>::handle_payload(const SnapClearRefCntPayload& payload,
+                                     C_NotifyAck *ack_ctx) {
+  RWLock::RLocker owner_locker(m_image_ctx.owner_lock);
+  if (m_image_ctx.exclusive_lock != nullptr) {
+    int r;
+    if (m_image_ctx.exclusive_lock->accept_requests(&r)) {
+      ldout(m_image_ctx.cct, 10) << this << " remote snap_unprotect request: "
+                                 << payload.snap_name << dendl;
+
+      m_image_ctx.operations->execute_snap_clear_refcnt(payload.snap_namespace,
+						     payload.snap_name, new C_ResponseMessage(ack_ctx));
       return false;
     } else if (r < 0) {
       ::encode(ResponseMessage(r), ack_ctx->out);

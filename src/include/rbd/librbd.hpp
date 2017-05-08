@@ -323,6 +323,11 @@ public:
   int snap_protect(const char *snap_name);
   int snap_unprotect(const char *snap_name);
   int snap_is_protected(const char *snap_name, bool *is_protected);
+  int snap_get_refcnt(const char *snap_name, uint32_t *refcnt);
+  int snap_clear_refcnt(const char *snap_name);
+  int snap_add_refcnt(const char *snap_name);
+  int snap_sub_refcnt(const char *snap_name);
+  librados::snap_t snap_get_id(const char *snap_name);
   int snap_set(const char *snap_name);
   int snap_rename(const char *srcname, const char *dstname);
   int snap_get_limit(uint64_t *limit);

@@ -388,6 +388,15 @@ void EventEntry::decode(bufferlist::iterator& it) {
   case EVENT_TYPE_SNAP_UNPROTECT:
     event = SnapUnprotectEvent();
     break;
+  case EVENT_TYPE_SNAP_CLEAR_REFCNT:
+    event = SnapClearRefCntEvent();
+    break;
+  case EVENT_TYPE_SNAP_ADD_REFCNT:
+    event = SnapAddRefCntEvent();
+    break;
+  case EVENT_TYPE_SNAP_SUB_REFCNT:
+    event = SnapSubRefCntEvent();
+    break;
   case EVENT_TYPE_SNAP_ROLLBACK:
     event = SnapRollbackEvent();
     break;
@@ -736,6 +745,15 @@ std::ostream &operator<<(std::ostream &out, const EventType &type) {
     break;
   case EVENT_TYPE_SNAP_UNPROTECT:
     out << "SnapUnprotect";
+    break;
+  case EVENT_TYPE_SNAP_CLEAR_REFCNT:
+    out << "SnapClearRefCnt";
+    break;
+  case EVENT_TYPE_SNAP_ADD_REFCNT:
+    out << "SnapAddRefCnt";
+    break;
+  case EVENT_TYPE_SNAP_SUB_REFCNT:
+    out << "SnapSubRefCnt";
     break;
   case EVENT_TYPE_SNAP_ROLLBACK:
     out << "SnapRollback";

@@ -551,16 +551,28 @@ struct C_InvalidateCache : public Context {
     return -ENOENT;
   }
 
+  int ImageCtx::is_snap_using(snap_t in_snap_id,
+                                 bool *is_using) const
+  {
+    assert(snap_lock.is_locked());
+    const SnapInfo *info = get_snap_info(in_snap_id);
+    if (info) {
+      *is_using = (info->ref_cnt > 0);
+      return 0;
+    }
+    return -ENOENT;
+  }
+
   void ImageCtx::add_snap(cls::rbd::SnapshotNamespace in_snap_namespace,
 			  string in_snap_name,
 			  snap_t id, uint64_t in_size,
 			  const ParentInfo &parent, uint8_t protection_status,
-                          uint64_t flags, utime_t timestamp)
+              uint64_t flags, utime_t timestamp, uint32_t ref_cnt)
   {
     assert(snap_lock.is_wlocked());
     snaps.push_back(id);
     SnapInfo info(in_snap_name, in_snap_namespace,
-		  in_size, parent, protection_status, flags, timestamp);
+		  in_size, parent, protection_status, flags, timestamp, ref_cnt);
     snap_info.insert({id, info});
     snap_ids.insert({{in_snap_namespace, in_snap_name}, id});
   }

@@ -68,6 +68,24 @@ struct ExecuteOp : public Context {
                                                  on_op_complete);
   }
 
+  void execute(const journal::SnapClearRefCntEvent &_) {
+    image_ctx.operations->execute_snap_clear_refcnt(event.snap_namespace,
+                                                 event.snap_name,
+                                                 on_op_complete);
+  }
+
+  void execute(const journal::SnapAddRefCntEvent &_) {
+    image_ctx.operations->execute_snap_add_refcnt(event.snap_namespace,
+                                                 event.snap_name,
+                                                 on_op_complete);
+  }
+
+  void execute(const journal::SnapSubRefCntEvent &_) {
+    image_ctx.operations->execute_snap_sub_refcnt(event.snap_namespace,
+                                                 event.snap_name,
+                                                 on_op_complete);
+  }
+
   void execute(const journal::SnapRollbackEvent &_) {
     image_ctx.operations->execute_snap_rollback(event.snap_namespace,
 						event.snap_name,
@@ -568,6 +586,78 @@ void Replay<I>::handle_event(const journal::SnapUnprotectEvent &event,
   // ignore errors recorded in the journal
   op_event->op_finish_error_codes = {-EBUSY};
 
+  // ignore errors caused due to replay
+  op_event->ignore_error_codes = {-EINVAL};
+
+  on_ready->complete(0);
+}
+
+template <typename I>
+void Replay<I>::handle_event(const journal::SnapClearRefCntEvent &event,
+			     Context *on_ready, Context *on_safe) {
+  CephContext *cct = m_image_ctx.cct;
+  ldout(cct, 20) << ": Snap clear ref cnt event" << dendl;
+
+  Mutex::Locker locker(m_lock);
+  OpEvent *op_event;
+  Context *on_op_complete = create_op_context_callback(event.op_tid, on_ready,
+                                                       on_safe, &op_event);
+  if (on_op_complete == nullptr) {
+    return;
+  }
+
+  op_event->on_op_finish_event = new C_RefreshIfRequired<I>(
+    m_image_ctx, new ExecuteOp<I, journal::SnapClearRefCntEvent>(m_image_ctx,
+                                                               event,
+                                                               on_op_complete));
+  // ignore errors caused due to replay
+  op_event->ignore_error_codes = {-EINVAL};
+
+  on_ready->complete(0);
+}
+
+template <typename I>
+void Replay<I>::handle_event(const journal::SnapAddRefCntEvent &event,
+			     Context *on_ready, Context *on_safe) {
+  CephContext *cct = m_image_ctx.cct;
+  ldout(cct, 20) << ": Snap add ref cnt event" << dendl;
+
+  Mutex::Locker locker(m_lock);
+  OpEvent *op_event;
+  Context *on_op_complete = create_op_context_callback(event.op_tid, on_ready,
+                                                       on_safe, &op_event);
+  if (on_op_complete == nullptr) {
+    return;
+  }
+
+  op_event->on_op_finish_event = new C_RefreshIfRequired<I>(
+    m_image_ctx, new ExecuteOp<I, journal::SnapAddRefCntEvent>(m_image_ctx,
+                                                               event,
+                                                               on_op_complete));
+  // ignore errors caused due to replay
+  op_event->ignore_error_codes = {-EINVAL};
+
+  on_ready->complete(0);
+}
+
+template <typename I>
+void Replay<I>::handle_event(const journal::SnapSubRefCntEvent &event,
+			     Context *on_ready, Context *on_safe) {
+  CephContext *cct = m_image_ctx.cct;
+  ldout(cct, 20) << ": Snap sub ref cnt event" << dendl;
+
+  Mutex::Locker locker(m_lock);
+  OpEvent *op_event;
+  Context *on_op_complete = create_op_context_callback(event.op_tid, on_ready,
+                                                       on_safe, &op_event);
+  if (on_op_complete == nullptr) {
+    return;
+  }
+
+  op_event->on_op_finish_event = new C_RefreshIfRequired<I>(
+    m_image_ctx, new ExecuteOp<I, journal::SnapSubRefCntEvent>(m_image_ctx,
+                                                               event,
+                                                               on_op_complete));
   // ignore errors caused due to replay
   op_event->ignore_error_codes = {-EINVAL};
 

@@ -27,7 +27,7 @@ public:
     RWLock::RLocker parent_locker(ictx->parent_lock);
     ictx->add_snap(cls::rbd::UserSnapshotNamespace(), "snap name", snap_id,
 		   ictx->size, ictx->parent_md,
-                   RBD_PROTECTION_STATUS_UNPROTECTED, 0, utime_t());
+                   RBD_PROTECTION_STATUS_UNPROTECTED, 0, utime_t(), 0);
   }
 
   void expect_read_map(librbd::ImageCtx *ictx, int r) {

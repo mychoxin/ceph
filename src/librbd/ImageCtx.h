@@ -244,6 +244,8 @@ namespace librbd {
 			  bool *is_protected) const;
     int is_snap_unprotected(librados::snap_t in_snap_id,
 			    bool *is_unprotected) const;
+    int is_snap_using(librados::snap_t in_snap_id,
+                         bool *is_using) const;
 
     uint64_t get_current_size() const;
     uint64_t get_object_size() const;
@@ -256,7 +258,8 @@ namespace librbd {
 		  std::string in_snap_name,
 		  librados::snap_t id,
 		  uint64_t in_size, const ParentInfo &parent,
-		  uint8_t protection_status, uint64_t flags, utime_t timestamp);
+		  uint8_t protection_status, uint64_t flags,
+          utime_t timestamp, uint32_t ref_cnt);
     void rm_snap(cls::rbd::SnapshotNamespace in_snap_namespace,
 		 std::string in_snap_name,
 		 librados::snap_t id);

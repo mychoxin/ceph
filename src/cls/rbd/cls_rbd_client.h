@@ -120,7 +120,8 @@ namespace librbd {
                              std::vector<string> *names,
                              std::vector<uint64_t> *sizes,
                              std::vector<ParentInfo> *parents,
-                             std::vector<uint8_t> *protection_statuses);
+                             std::vector<uint8_t> *protection_statuses,
+                             std::vector<uint32_t> *refcnts);
     void snapshot_timestamp_list_start(librados::ObjectReadOperation *op,
                                        const std::vector<snapid_t> &ids);
 
@@ -137,7 +138,8 @@ namespace librbd {
 		      std::vector<string> *names,
 		      std::vector<uint64_t> *sizes,
 		      std::vector<ParentInfo> *parents,
-		      std::vector<uint8_t> *protection_statuses);
+		      std::vector<uint8_t> *protection_statuses,
+              std::vector<uint32_t> *refcnts);
 
     void snapshot_namespace_list_start(librados::ObjectReadOperation *op,
                                        const std::vector<snapid_t> &ids);
@@ -162,6 +164,11 @@ namespace librbd {
 			      snapid_t snap_id, uint8_t protection_status);
     void set_protection_status(librados::ObjectWriteOperation *op,
                                snapid_t snap_id, uint8_t protection_status);
+    int get_snapshot_refcnt(librados::IoCtx *ioctx, const std::string &oid,
+                              uint32_t *refcnt);
+    void clear_snapshot_refcnt(librados::ObjectWriteOperation *op, snapid_t snap_id);
+    void add_snapshot_refcnt(librados::ObjectWriteOperation *op, snapid_t snap_id);
+    void sub_snapshot_refcnt(librados::ObjectWriteOperation *op, snapid_t snap_id);
     int snapshot_get_limit(librados::IoCtx *ioctx, const std::string &oid,
 			   uint64_t *limit);
     void snapshot_set_limit(librados::ObjectWriteOperation *op,

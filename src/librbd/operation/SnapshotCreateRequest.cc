@@ -297,7 +297,7 @@ void SnapshotCreateRequest<I>::update_snap_context() {
   utime_t snap_time = ceph_clock_now();
   image_ctx.add_snap(m_snap_namespace, m_snap_name, m_snap_id, m_size,
 		     m_parent_info, RBD_PROTECTION_STATUS_UNPROTECTED,
-		     0, snap_time);
+		     0, snap_time, 0);
 
   // immediately start using the new snap context if we
   // own the exclusive lock

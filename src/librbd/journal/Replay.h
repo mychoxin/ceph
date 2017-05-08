@@ -149,6 +149,12 @@ private:
                     Context *on_safe);
   void handle_event(const SnapUnprotectEvent &event, Context *on_ready,
                     Context *on_safe);
+  void handle_event(const SnapClearRefCntEvent &event, Context *on_ready,
+                    Context *on_safe);
+  void handle_event(const SnapAddRefCntEvent &event, Context *on_ready,
+                    Context *on_safe);
+  void handle_event(const SnapSubRefCntEvent &event, Context *on_ready,
+                    Context *on_safe);
   void handle_event(const SnapRollbackEvent &event, Context *on_ready,
                     Context *on_safe);
   void handle_event(const RenameEvent &event, Context *on_ready,

@@ -1526,6 +1526,103 @@ TRACEPOINT_EVENT(librbd, snap_is_protected_exit,
     )
 )
 
+TRACEPOINT_EVENT(librbd, snap_getref_enter,
+    TP_ARGS(
+        void*, imagectx,
+        const char*, name,
+        const char*, snap_name,
+        char, read_only,
+        const char*, getref_snap_name),
+    TP_FIELDS(
+        ctf_integer_hex(void*, imagectx, imagectx)
+        ctf_string(name, name)
+        ctf_string(snap_name, snap_name)
+        ctf_integer(char, read_only, read_only)
+        ctf_string(getref_snap_name, getref_snap_name)
+    )
+)
+
+TRACEPOINT_EVENT(librbd, snap_getref_exit,
+    TP_ARGS(
+        int, retval),
+    TP_FIELDS(
+        ctf_integer(int, retval, retval)
+    )
+)
+
+TRACEPOINT_EVENT(librbd, snap_clear_ref_enter,
+    TP_ARGS(
+        void*, imagectx,
+        const char*, name,
+        const char*, snap_name,
+        char, read_only,
+        const char*, clear_ref_snap_name),
+    TP_FIELDS(
+        ctf_integer_hex(void*, imagectx, imagectx)
+        ctf_string(name, name)
+        ctf_string(snap_name, snap_name)
+        ctf_integer(char, read_only, read_only)
+        ctf_string(clear_ref_snap_name, clear_ref_snap_name)
+    )
+)
+
+TRACEPOINT_EVENT(librbd, snap_clear_ref_exit,
+    TP_ARGS(
+        int, retval),
+    TP_FIELDS(
+        ctf_integer(int, retval, retval)
+    )
+)
+
+TRACEPOINT_EVENT(librbd, snap_addref_enter,
+    TP_ARGS(
+        void*, imagectx,
+        const char*, name,
+        const char*, snap_name,
+        char, read_only,
+        const char*, addref_snap_name),
+    TP_FIELDS(
+        ctf_integer_hex(void*, imagectx, imagectx)
+        ctf_string(name, name)
+        ctf_string(snap_name, snap_name)
+        ctf_integer(char, read_only, read_only)
+        ctf_string(addref_snap_name, addref_snap_name)
+    )
+)
+
+TRACEPOINT_EVENT(librbd, snap_addref_exit,
+    TP_ARGS(
+        int, retval),
+    TP_FIELDS(
+        ctf_integer(int, retval, retval)
+    )
+)
+
+TRACEPOINT_EVENT(librbd, snap_subref_enter,
+    TP_ARGS(
+        void*, imagectx,
+        const char*, name,
+        const char*, snap_name,
+        char, read_only,
+        const char*, subref_snap_name),
+    TP_FIELDS(
+        ctf_integer_hex(void*, imagectx, imagectx)
+        ctf_string(name, name)
+        ctf_string(snap_name, snap_name)
+        ctf_integer(char, read_only, read_only)
+        ctf_string(subref_snap_name, subref_snap_name)
+    )
+)
+
+TRACEPOINT_EVENT(librbd, snap_subref_exit,
+    TP_ARGS(
+        int, retval),
+    TP_FIELDS(
+        ctf_integer(int, retval, retval)
+    )
+)
+
+
 TRACEPOINT_EVENT(librbd, snap_exists_enter,
     TP_ARGS(
         void*, imagectx,

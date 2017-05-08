@@ -66,6 +66,7 @@ struct cls_rbd_snap {
   cls_rbd_parent parent;
   uint64_t flags;
   utime_t timestamp;
+  uint32_t ref_cnt;
   cls::rbd::SnapshotNamespaceOnDisk snapshot_namespace;
 
   /// true if we have a parent
@@ -75,10 +76,10 @@ struct cls_rbd_snap {
 
   cls_rbd_snap() : id(CEPH_NOSNAP), image_size(0), features(0),
 		   protection_status(RBD_PROTECTION_STATUS_UNPROTECTED),
-                   flags(0), timestamp(utime_t())
+                   flags(0), timestamp(utime_t()), ref_cnt(0)
     {}
   void encode(bufferlist& bl) const {
-    ENCODE_START(6, 1, bl);
+    ENCODE_START(7, 1, bl);
     ::encode(id, bl);
     ::encode(name, bl);
     ::encode(image_size, bl);
@@ -88,10 +89,11 @@ struct cls_rbd_snap {
     ::encode(flags, bl);
     ::encode(snapshot_namespace, bl);
     ::encode(timestamp, bl);
+    ::encode(ref_cnt, bl);
     ENCODE_FINISH(bl);
   }
   void decode(bufferlist::iterator& p) {
-    DECODE_START(6, p);
+    DECODE_START(7, p);
     ::decode(id, p);
     ::decode(name, p);
     ::decode(image_size, p);
@@ -112,6 +114,9 @@ struct cls_rbd_snap {
     }
     if (struct_v >= 6) {
       ::decode(timestamp, p);
+    }
+    if (struct_v >= 7) {
+      ::decode(ref_cnt, p);
     }
     DECODE_FINISH(p);
   }

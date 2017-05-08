@@ -97,6 +97,9 @@ set(librbd_internal_srcs
   operation/SnapshotRenameRequest.cc
   operation/SnapshotRollbackRequest.cc
   operation/SnapshotUnprotectRequest.cc
+  operation/SnapshotClearRefCntRequest.cc
+  operation/SnapshotAddRefCntRequest.cc
+  operation/SnapshotSubRefCntRequest.cc
   operation/SnapshotLimitRequest.cc
   operation/TrimRequest.cc
   watcher/Notifier.cc

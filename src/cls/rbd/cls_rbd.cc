@@ -659,6 +659,219 @@ int set_protection_status(cls_method_context_t hctx, bufferlist *in,
 }
 
 /**
+ * get the current reference count of the specified snapshot
+ *
+ * Input:
+ * @param snap_id (uint64_t) which snapshot to get the reference count of
+ *
+ * Output:
+ * @param ref_cnt (uint32_t)
+ *
+ * @returns 0 on success, negative error code on failure
+ * @returns -EINVAL if snapid is CEPH_NOSNAP
+ */
+int get_snapshot_refcnt(cls_method_context_t hctx, bufferlist *in,
+			  bufferlist *out)
+{
+  snapid_t snap_id;
+
+  bufferlist::iterator iter = in->begin();
+  try {
+    ::decode(snap_id, iter);
+  } catch (const buffer::error &err) {
+    CLS_LOG(20, "get_snapshot_refcnt: invalid decode");
+    return -EINVAL;
+  }
+
+  int r = check_exists(hctx);
+  if (r < 0)
+    return r;
+
+  CLS_LOG(20, "get_snapshot_refcnt snap_id=%llu",
+         (unsigned long long)snap_id.val);
+
+  if (snap_id == CEPH_NOSNAP)
+    return -EINVAL;
+
+  cls_rbd_snap snap;
+  string snapshot_key;
+  key_from_snap_id(snap_id.val, &snapshot_key);
+  r = read_key(hctx, snapshot_key, &snap);
+  if (r < 0) {
+    CLS_ERR("could not read key for snapshot id %" PRIu64, snap_id.val);
+    return r;
+  }
+
+  ::encode(snap.ref_cnt, *out);
+  return 0;
+}
+
+/**
+ * set the reference count of a snapshot to zero
+ *
+ * Input:
+ * @param snapid (uint64_t) which snapshot to set the reference count of
+ * @param ref_cnt (uint32_t)
+ *
+ * @returns 0 on success, negative error code on failure
+ * @returns -EINVAL if snapid is CEPH_NOSNAP
+ */
+int clear_snapshot_refcnt(cls_method_context_t hctx, bufferlist *in,
+			  bufferlist *out)
+{
+  snapid_t snap_id;
+
+  bufferlist::iterator iter = in->begin();
+  try {
+    ::decode(snap_id, iter);
+  } catch (const buffer::error &err) {
+    CLS_LOG(20, "clear_snapshot_refcnt: invalid decode");
+    return -EINVAL;
+  }
+
+  int r = check_exists(hctx);
+  if (r < 0)
+    return r;
+
+  CLS_LOG(20, "clear_snapshot_refcnt snapid=%llu",
+	  (unsigned long long)snap_id.val);
+
+  if (snap_id == CEPH_NOSNAP)
+    return -EINVAL;
+
+  cls_rbd_snap snap;
+  string snapshot_key;
+  key_from_snap_id(snap_id.val, &snapshot_key);
+  r = read_key(hctx, snapshot_key, &snap);
+  if (r < 0) {
+    CLS_ERR("could not read key for snapshot id %" PRIu64, snap_id.val);
+    return r;
+  }
+
+  snap.ref_cnt = 0;
+  bufferlist snapshot_bl;
+  ::encode(snap, snapshot_bl);
+  r = cls_cxx_map_set_val(hctx, snapshot_key, &snapshot_bl);
+  if (r < 0) {
+    CLS_ERR("error writing snapshot metadata: %s", cpp_strerror(r).c_str());
+    return r;
+  }
+
+  return 0;
+}
+
+/**
+ * add the reference count of a snapshot by one
+ *
+ * Input:
+ * @param snapid (uint64_t) which snapshot to add the reference count of
+ * @param ref_cnt (uint32_t)
+ *
+ * @returns 0 on success, negative error code on failure
+ * @returns -EINVAL if snapid is CEPH_NOSNAP
+ */
+int add_snapshot_refcnt(cls_method_context_t hctx, bufferlist *in,
+			  bufferlist *out)
+{
+  snapid_t snap_id;
+
+  bufferlist::iterator iter = in->begin();
+  try {
+    ::decode(snap_id, iter);
+  } catch (const buffer::error &err) {
+    CLS_LOG(20, "add_snapshot_refcnt: invalid decode");
+    return -EINVAL;
+  }
+
+  int r = check_exists(hctx);
+  if (r < 0)
+    return r;
+
+  CLS_LOG(20, "add_snapshot_refcnt snapid=%llu",
+	  (unsigned long long)snap_id.val);
+
+  if (snap_id == CEPH_NOSNAP)
+    return -EINVAL;
+
+  cls_rbd_snap snap;
+  string snapshot_key;
+  key_from_snap_id(snap_id.val, &snapshot_key);
+  r = read_key(hctx, snapshot_key, &snap);
+  if (r < 0) {
+    CLS_ERR("could not read key for snapshot id %" PRIu64, snap_id.val);
+    return r;
+  }
+
+  snap.ref_cnt++;
+  bufferlist snapshot_bl;
+  ::encode(snap, snapshot_bl);
+  r = cls_cxx_map_set_val(hctx, snapshot_key, &snapshot_bl);
+  if (r < 0) {
+    CLS_ERR("error writing snapshot metadata: %s", cpp_strerror(r).c_str());
+    return r;
+  }
+
+  return 0;
+}
+
+/**
+ * sub the reference count of a snapshot by one
+ *
+ * Input:
+ * @param snapid (uint64_t) which snapshot to sub the reference count of
+ * @param ref_cnt (uint32_t)
+ *
+ * @returns 0 on success, negative error code on failure
+ * @returns -EINVAL if snapid is CEPH_NOSNAP
+ */
+int sub_snapshot_refcnt(cls_method_context_t hctx, bufferlist *in,
+			  bufferlist *out)
+{
+  snapid_t snap_id;
+
+  bufferlist::iterator iter = in->begin();
+  try {
+    ::decode(snap_id, iter);
+  } catch (const buffer::error &err) {
+    CLS_LOG(20, "sub_snapshot_refcnt: invalid decode");
+    return -EINVAL;
+  }
+
+  int r = check_exists(hctx);
+  if (r < 0)
+    return r;
+
+  CLS_LOG(20, "sub_snapshot_refcnt snapid=%llu",
+	  (unsigned long long)snap_id.val);
+
+  if (snap_id == CEPH_NOSNAP)
+    return -EINVAL;
+
+  cls_rbd_snap snap;
+  string snapshot_key;
+  key_from_snap_id(snap_id.val, &snapshot_key);
+  r = read_key(hctx, snapshot_key, &snap);
+  if (r < 0) {
+    CLS_ERR("could not read key for snapshot id %" PRIu64, snap_id.val);
+    return r;
+  }
+
+  if (snap.ref_cnt)
+    snap.ref_cnt--;
+  else
+    return -EINVAL;
+  bufferlist snapshot_bl;
+  ::encode(snap, snapshot_bl);
+  r = cls_cxx_map_set_val(hctx, snapshot_key, &snapshot_bl);
+  if (r < 0) {
+    CLS_ERR("error writing snapshot metadata: %s", cpp_strerror(r).c_str());
+    return r;
+  }
+
+  return 0;
+}
+
+/**
  * get striping parameters
  *
  * Input:
@@ -5077,6 +5290,10 @@ CLS_INIT(rbd)
   cls_method_handle_t h_set_parent;
   cls_method_handle_t h_get_protection_status;
   cls_method_handle_t h_set_protection_status;
+  cls_method_handle_t h_get_snapshot_refcnt;
+  cls_method_handle_t h_clear_snapshot_refcnt;
+  cls_method_handle_t h_add_snapshot_refcnt;
+  cls_method_handle_t h_sub_snapshot_refcnt;
   cls_method_handle_t h_get_stripe_unit_count;
   cls_method_handle_t h_set_stripe_unit_count;
   cls_method_handle_t h_get_flags;
@@ -5221,6 +5438,18 @@ CLS_INIT(rbd)
   cls_register_cxx_method(h_class, "get_protection_status",
 			  CLS_METHOD_RD,
 			  get_protection_status, &h_get_protection_status);
+  cls_register_cxx_method(h_class, "get_snapshot_refcnt",
+			  CLS_METHOD_RD,
+			  get_snapshot_refcnt, &h_get_snapshot_refcnt);
+  cls_register_cxx_method(h_class, "clear_snapshot_refcnt",
+			  CLS_METHOD_RD | CLS_METHOD_WR,
+			  clear_snapshot_refcnt, &h_clear_snapshot_refcnt);
+  cls_register_cxx_method(h_class, "add_snapshot_refcnt",
+			  CLS_METHOD_RD | CLS_METHOD_WR,
+			  add_snapshot_refcnt, &h_add_snapshot_refcnt);
+  cls_register_cxx_method(h_class, "sub_snapshot_refcnt",
+			  CLS_METHOD_RD | CLS_METHOD_WR,
+			  sub_snapshot_refcnt, &h_sub_snapshot_refcnt);
   cls_register_cxx_method(h_class, "get_stripe_unit_count",
 			  CLS_METHOD_RD,
 			  get_stripe_unit_count, &h_get_stripe_unit_count);

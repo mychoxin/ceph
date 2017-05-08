@@ -1372,6 +1372,42 @@ namespace librbd {
     return r;
   }
 
+  int Image::snap_get_refcnt(const char *snap_name, uint32_t *refcnt)
+  {
+    ImageCtx *ictx = (ImageCtx *)ctx;
+    tracepoint(librbd, snap_getref_enter, ictx, ictx->name.c_str(), ictx->snap_name.c_str(), ictx->read_only, snap_name);
+    int r = librbd::snap_get_refcnt(ictx, refcnt);
+    tracepoint(librbd, snap_getref_exit, r);
+    return r;
+  }
+
+  int Image::snap_clear_refcnt(const char *snap_name)
+  {
+    ImageCtx *ictx = (ImageCtx *)ctx;
+    tracepoint(librbd, snap_clear_ref_enter, ictx, ictx->name.c_str(), ictx->snap_name.c_str(), ictx->read_only, snap_name);
+    int r = ictx->operations->snap_clear_refcnt(cls::rbd::UserSnapshotNamespace(), snap_name);
+    tracepoint(librbd, snap_clear_ref_exit, r);
+    return r;
+  }
+
+  int Image::snap_add_refcnt(const char *snap_name)
+  {
+    ImageCtx *ictx = (ImageCtx *)ctx;
+    tracepoint(librbd, snap_addref_enter, ictx, ictx->name.c_str(), ictx->snap_name.c_str(), ictx->read_only, snap_name);
+    int r = ictx->operations->snap_add_refcnt(cls::rbd::UserSnapshotNamespace(), snap_name);
+    tracepoint(librbd, snap_addref_exit, r);
+    return r;
+  }
+
+  int Image::snap_sub_refcnt(const char *snap_name)
+  {
+    ImageCtx *ictx = (ImageCtx *)ctx;
+    tracepoint(librbd, snap_subref_enter, ictx, ictx->name.c_str(), ictx->snap_name.c_str(), ictx->read_only, snap_name);
+    int r = ictx->operations->snap_sub_refcnt(cls::rbd::UserSnapshotNamespace(), snap_name);
+    tracepoint(librbd, snap_subref_exit, r);
+    return r;
+  }
+
   int Image::snap_list(vector<librbd::snap_info_t>& snaps)
   {
     ImageCtx *ictx = (ImageCtx *)ctx;
@@ -1434,6 +1470,13 @@ namespace librbd {
     int r = librbd::snap_get_limit(ictx, limit);
     tracepoint(librbd, snap_get_limit_exit, r, *limit);
     return r;
+  }
+
+  snap_t Image::snap_get_id(const char *snap_name)
+  {
+    ImageCtx *ictx = (ImageCtx *)ctx;
+    RWLock::RLocker l(ictx->snap_lock);
+    return librbd::snap_get_id(ictx, snap_name);
   }
 
   int Image::snap_set_limit(uint64_t limit)

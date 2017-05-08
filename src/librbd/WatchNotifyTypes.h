@@ -65,6 +65,7 @@ enum NotifyOp {
   NOTIFY_OP_SNAP_UNPROTECT     = 13,
   NOTIFY_OP_RENAME             = 14,
   NOTIFY_OP_UPDATE_FEATURES    = 15,
+  NOTIFY_OP_SNAP_CLEAR_REFCNT  = 16,
 };
 
 struct AcquiredLockPayload {
@@ -262,6 +263,15 @@ struct SnapUnprotectPayload : public SnapPayloadBase {
     : SnapPayloadBase(snap_namespace, name) {}
 };
 
+struct SnapClearRefCntPayload: public SnapPayloadBase {
+  static const NotifyOp NOTIFY_OP = NOTIFY_OP_SNAP_CLEAR_REFCNT;
+
+  SnapClearRefCntPayload() {}
+  SnapClearRefCntPayload(const cls::rbd::SnapshotNamespace& snap_namespace,
+		       const std::string &name)
+    : SnapPayloadBase(snap_namespace, name) {}
+};
+
 struct RebuildObjectMapPayload : public AsyncRequestPayloadBase {
   static const NotifyOp NOTIFY_OP = NOTIFY_OP_REBUILD_OBJECT_MAP;
   static const bool CHECK_FOR_REFRESH = true;
@@ -323,6 +333,7 @@ typedef boost::variant<AcquiredLockPayload,
                        SnapRenamePayload,
                        SnapProtectPayload,
                        SnapUnprotectPayload,
+                       SnapClearRefCntPayload,
                        RebuildObjectMapPayload,
                        RenamePayload,
                        UpdateFeaturesPayload,

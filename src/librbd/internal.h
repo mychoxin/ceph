@@ -157,9 +157,13 @@ namespace librbd {
   int snap_get_limit(ImageCtx *ictx, uint64_t *limit);
   int snap_set_limit(ImageCtx *ictx, uint64_t limit);
   int snap_get_timestamp(ImageCtx *ictx, uint64_t snap_id, struct timespec *timestamp);
+  librados::snap_t snap_get_id(ImageCtx *ictx, const char *snap_name);
   int snap_remove(ImageCtx *ictx, const char *snap_name, uint32_t flags, ProgressContext& pctx);
   int snap_is_protected(ImageCtx *ictx, const char *snap_name,
 			bool *is_protected);
+  int snap_is_using(ImageCtx *ictx, const char *snap_name,
+                       bool *is_using);
+  int snap_get_refcnt(ImageCtx *ictx, uint32_t *ref_cnt);
   int copy(ImageCtx *ictx, IoCtx& dest_md_ctx, const char *destname,
 	   ImageOptions& opts, ProgressContext &prog_ctx, size_t sparse_size);
   int copy(ImageCtx *src, ImageCtx *dest, ProgressContext &prog_ctx, size_t sparse_size);

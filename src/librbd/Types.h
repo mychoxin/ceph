@@ -58,13 +58,15 @@ struct SnapInfo {
   uint8_t protection_status;
   uint64_t flags;
   utime_t timestamp;
+  uint32_t ref_cnt;
   SnapInfo(std::string _name,
            const cls::rbd::SnapshotNamespace &_snap_namespace,
            uint64_t _size, const ParentInfo &_parent,
-           uint8_t _protection_status, uint64_t _flags, utime_t _timestamp)
+           uint8_t _protection_status, uint64_t _flags,
+           utime_t _timestamp, uint32_t _ref_cnt)
     : name(_name), snap_namespace(_snap_namespace), size(_size),
       parent(_parent), protection_status(_protection_status), flags(_flags),
-      timestamp(_timestamp) {
+      timestamp(_timestamp), ref_cnt(_ref_cnt) {
   }
 };
 

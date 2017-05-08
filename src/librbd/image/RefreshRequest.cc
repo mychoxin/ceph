@@ -394,6 +394,7 @@ void RefreshRequest<I>::send_v2_get_snapshots() {
     m_snap_parents.clear();
     m_snap_protection.clear();
     m_snap_timestamps.clear();
+    m_snap_refcnts.clear();
     send_v2_refresh_parent();
     return;
   }
@@ -424,9 +425,10 @@ Context *RefreshRequest<I>::handle_v2_get_snapshots(int *result) {
     bufferlist::iterator it = m_out_bl.begin();
     *result = cls_client::snapshot_list_finish(&it, m_snapc.snaps,
                                                &m_snap_names,
-					       &m_snap_sizes,
+                                               &m_snap_sizes,
                                                &m_snap_parents,
-                                               &m_snap_protection);
+                                               &m_snap_protection,
+                                               &m_snap_refcnts);
   }
   if (*result == -ENOENT) {
     ldout(cct, 10) << "out-of-sync snapshot state detected" << dendl;
@@ -1051,7 +1053,8 @@ void RefreshRequest<I>::apply() {
 
       m_image_ctx.add_snap(m_snap_namespaces[i], m_snap_names[i],
 			   m_snapc.snaps[i].val, m_snap_sizes[i], parent,
-			   protection_status, flags, m_snap_timestamps[i]);
+			   protection_status, flags, m_snap_timestamps[i],
+               m_snap_refcnts[i]);
     }
     m_image_ctx.snapc = m_snapc;
 

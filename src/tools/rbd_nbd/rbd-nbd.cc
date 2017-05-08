@@ -722,8 +722,25 @@ static int do_map(int argc, const char *argv[])
       register_async_signal_handler_oneshot(SIGINT, handle_signal);
       register_async_signal_handler_oneshot(SIGTERM, handle_signal);
 
+      uint64_t snap_id = CEPH_NOSNAP;
+      if (!snapname.empty()) {
+        snap_id = image.snap_get_id(snapname.c_str());
+        if (snap_id != CEPH_NOSNAP) {
+          r = image.snap_add_refcnt(snapname.c_str());
+          if (r < 0) {
+            cerr << "rbd-nbd: failed to increase snap ref cnt " << cpp_strerror(-r) << std::endl;
+          }
+        }
+      }
+
       ioctl(nbd, NBD_DO_IT);
      
+      if (snap_id != CEPH_NOSNAP) {
+        r = image.snap_sub_refcnt(snapname.c_str());
+        if (r < 0)
+           cerr << "rbd-nbd: failed to decrease snap ref cnt " << cpp_strerror(-r) << std::endl;
+      }
+
       unregister_async_signal_handler(SIGHUP, sighup_handler);
       unregister_async_signal_handler(SIGINT, handle_signal);
       unregister_async_signal_handler(SIGTERM, handle_signal);

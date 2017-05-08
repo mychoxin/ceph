@@ -729,6 +729,24 @@ int validate_pool(IoCtx &io_ctx, CephContext *cct) {
     return r;
   }
 
+  int snap_is_using(ImageCtx *ictx, const char *snap_name,
+                       bool *is_using)
+  {
+    ldout(ictx->cct, 20) << "snap_is_protected " << ictx << " " << snap_name
+                        << dendl;
+
+    int r = ictx->state->refresh_if_required();
+    if (r < 0)
+      return r;
+
+    RWLock::RLocker l(ictx->snap_lock);
+    snap_t snap_id = ictx->get_snap_id(cls::rbd::UserSnapshotNamespace(), snap_name);
+    if (snap_id == CEPH_NOSNAP)
+      return -ENOENT;
+    r = ictx->is_snap_using(snap_id, is_using);
+    return r;
+  }
+
   int create_v1(IoCtx& io_ctx, const char *imgname, uint64_t size, int order)
   {
     CephContext *cct = (CephContext *)io_ctx.cct();
@@ -1640,6 +1658,29 @@ int validate_pool(IoCtx &io_ctx, CephContext *cct) {
       }
     }
 
+    bool is_using;
+    r = snap_is_using(ictx, snap_name, &is_using);
+    if (r < 0) {
+      return r;
+    }
+
+    if (is_using && flags & RBD_SNAP_CLEAR_REFCNT) {
+      r = ictx->operations->snap_clear_refcnt(cls::rbd::UserSnapshotNamespace(), snap_name);
+      if (r < 0) {
+       lderr(ictx->cct) << "failed to clear ref cnt of snapshot: " << snap_name << dendl;
+       return r;
+      }
+
+      r = snap_is_using(ictx, snap_name, &is_using);
+      if (r < 0) {
+       return r;
+      }
+      if (is_using) {
+       lderr(ictx->cct) << "snapshot is still in use after clear ref cnt" << dendl;
+       assert(0);
+      }
+    }
+
     C_SaferCond ctx;
     ictx->operations->snap_remove(cls::rbd::UserSnapshotNamespace(), snap_name, &ctx);
 
@@ -1656,6 +1697,12 @@ int validate_pool(IoCtx &io_ctx, CephContext *cct) {
     return 0;
   }
 
+  snap_t snap_get_id(ImageCtx *ictx, const char *snap_name)
+  {
+    RWLock::RLocker l(ictx->snap_lock);
+    return ictx->get_snap_id(cls::rbd::UserSnapshotNamespace(), snap_name);
+  }
+
   int snap_get_limit(ImageCtx *ictx, uint64_t *limit)
   {
     int r = cls_client::snapshot_get_limit(&ictx->md_ctx, ictx->header_oid,
@@ -1670,6 +1717,12 @@ int validate_pool(IoCtx &io_ctx, CephContext *cct) {
   int snap_set_limit(ImageCtx *ictx, uint64_t limit)
   {
     return ictx->operations->snap_set_limit(limit);
+  }
+
+  int snap_get_refcnt(ImageCtx *ictx, uint32_t *ref_cnt)
+  {
+    return cls_client::get_snapshot_refcnt(&ictx->md_ctx, ictx->header_oid,
+                                         ref_cnt);
   }
 
   struct CopyProgressCtx {

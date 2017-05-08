@@ -139,6 +139,7 @@ private:
   std::vector<uint8_t> m_snap_protection;
   std::vector<uint64_t> m_snap_flags;
   std::vector<utime_t> m_snap_timestamps;
+  std::vector<uint32_t> m_snap_refcnts;
 
   std::map<rados::cls::lock::locker_id_t,
            rados::cls::lock::locker_info_t> m_lockers;

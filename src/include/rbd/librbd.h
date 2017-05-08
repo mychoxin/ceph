@@ -77,7 +77,8 @@ typedef struct {
 
 #define RBD_SNAP_REMOVE_UNPROTECT	1 << 0
 #define RBD_SNAP_REMOVE_FLATTEN		1 << 1
-#define RBD_SNAP_REMOVE_FORCE		(RBD_SNAP_REMOVE_UNPROTECT | RBD_SNAP_REMOVE_FLATTEN)
+#define RBD_SNAP_CLEAR_REFCNT       1 << 2
+#define RBD_SNAP_REMOVE_FORCE       (RBD_SNAP_REMOVE_UNPROTECT | RBD_SNAP_REMOVE_FLATTEN | RBD_SNAP_CLEAR_REFCNT)
 
 /**
  * These types used to in set_image_notification to indicate the type of event
