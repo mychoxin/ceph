@@ -49,6 +49,7 @@ extern "C" {
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "statlite.h"
+//#include <math.h>
 }
 
 #include <string>
@@ -87,6 +88,8 @@ typedef off_t off64_t;
 typedef off_t loff_t;
 #endif
 
+#define WEIGHT_PRECISION 5
+#define WEIGHT_DECIMALS (float)pow(10.0, WEIGHT_PRECISION)
 
 // -- io helpers --
 
@@ -448,7 +451,7 @@ inline ostream& operator<<(ostream& out, const weightf_t& w)
     return out << "0";
   } else {
     std::streamsize p = out.precision();
-    return out << std::fixed << std::setprecision(5) << w.v << std::setprecision(p);
+    return out << std::fixed << std::setprecision(WEIGHT_PRECISION) << w.v << std::setprecision(p);
   }
 }
 

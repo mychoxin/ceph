@@ -826,7 +826,7 @@ public:
    */
   int get_item_weight(int id) const;
   float get_item_weightf(int id) const {
-    return (float)get_item_weight(id) / (float)0x10000;
+    return (float)get_item_weight(id) / WEIGHT_DECIMALS / (float)0x10000;
   }
   int get_item_weight_in_loc(int id, const map<string,string> &loc);
   float get_item_weightf_in_loc(int id, const map<string,string> &loc) {
@@ -835,7 +835,7 @@ public:
 
   int adjust_item_weight(CephContext *cct, int id, int weight);
   int adjust_item_weightf(CephContext *cct, int id, float weight) {
-    return adjust_item_weight(cct, id, (int)(weight * (float)0x10000));
+    return adjust_item_weight(cct, id, (int)(weight * WEIGHT_DECIMALS * (float)0x10000));
   }
   int adjust_item_weight_in_loc(CephContext *cct, int id, int weight, const map<string,string>& loc);
   int adjust_item_weightf_in_loc(CephContext *cct, int id, float weight, const map<string,string>& loc) {
